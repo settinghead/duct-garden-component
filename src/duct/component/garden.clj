@@ -2,7 +2,10 @@
   "A component for running Garden CSS compiler."
   (:require [com.stuartsierra.component :as component]
             [suspendable.core :as suspendable]
+            [clojure.pprint :refer [pprint]]
+            [ns-tracker.core :as ns-tracker]
             [clojure.java.io :as io]
+            [garden.core]
             [me.raynes.fs :as fs]))
 
 (defn- builds [project]
@@ -32,21 +35,35 @@
      (when-not (fs/mkdirs dir)
        (throw (Exception. (format "Could not create directory %s" dir)))))))
 
+(defn- prepare-build [build]
+  (ensure-output-directory-exists build))
+
+(defn- compile-builds [builds]
+  (doseq [build builds]
+    (prepare-build build)
+    (try
+      (let [stylesheet (:stylesheet build)
+            flags (:compiler build)]
+        (println (str "Compiling with Garden " (pr-str (:output-to flags)) "..."))
+        (garden.core/css flags stylesheet)
+        (println "CSS compilation successful."))
+      (catch Exception e
+        (println "Error:" (.getMessage e))))
+  (flush)))
+
 (defrecord Server [builds]
   component/Lifecycle
   (start [component]
-    (println "Starting Garden...")
-    (assoc component :a "b"))
+    (compile-builds builds)
+    component)
   (stop [component]
-    (println "Stopping Garden...")
-    (assoc component :a "b"))
+    component)
   suspendable/Suspendable
   (suspend [component]
-    (println "Pausing Garden...")
-    (assoc component :a "b"))
+    component)
   (resume [component old-component]
-    (println "Resuming Garden...")
-    (assoc component :a "b")))
+    (compile-builds builds)
+    component))
 
 (defn server [options]
   (map->Server options))
