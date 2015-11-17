@@ -1,0 +1,3 @@
+[submodule "checkouts/garden"]
+	path = checkouts/garden
+	url = git@github.com:noprompt/garden.git
