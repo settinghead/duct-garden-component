@@ -42,14 +42,15 @@
   (doseq [build builds]
     (prepare-build build)
     (try
-      (let [stylesheet (:stylesheet build)
+      (let [stylesheet (eval (:stylesheet build))
             flags (:compiler build)]
         (println (str "Compiling with Garden " (pr-str (:output-to flags)) "..."))
+        (println stylesheet)
         (garden.core/css flags stylesheet)
         (println "CSS compilation successful."))
       (catch Exception e
         (println "Error:" (.getMessage e))))
-  (flush)))
+   (flush)))
 
 (defrecord Server [builds]
   component/Lifecycle
